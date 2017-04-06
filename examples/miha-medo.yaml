@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: medo-deployment
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: miha-medo-pod
+      labels:
+        case: label-medo
+      annotations:
+        kubernetes.io/target-runtime: virtlet
+        scheduler.alpha.kubernetes.io/affinity: >
+          {
+            "nodeAffinity": {
+              "requiredDuringSchedulingIgnoredDuringExecution": {
+                "nodeSelectorTerms": [
+                  {
+                    "matchExpressions": [
+                      {
+                        "key": "extraRuntime",
+                        "operator": "In",
+                        "values": ["virtlet"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+    spec:
+      containers:
+        - name: miha-medo
+          image: virtlet/image-service.kube-system/medo.qemu
+          imagePullPolicy: Always
+          ports:
+          - name: web
+            containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medo-service
+  namespace: default
+spec:
+  type: NodePort  # brez tega bo service dosegljiv samo znotraj clustra
+  selector:
+    case: label-medo
+  ports:
+  - name: web
+    port: 80
+    targetPort: 3000

@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: medo-db-deployment
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: miha-medo-pod
+      labels:
+        case: label-medo-db
+      annotations:
+        kubernetes.io/target-runtime: virtlet
+        scheduler.alpha.kubernetes.io/affinity: >
+          {
+            "nodeAffinity": {
+              "requiredDuringSchedulingIgnoredDuringExecution": {
+                "nodeSelectorTerms": [
+                  {
+                    "matchExpressions": [
+                      {
+                        "key": "extraRuntime",
+                        "operator": "In",
+                        "values": ["virtlet"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+    spec:
+      containers:
+        - name: miha-medo-db
+          image: virtlet/image-service.kube-system/medo-db.qemu
+          imagePullPolicy: Always
+          ports:
+          - name: mysql
+            containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medo-db-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    case: label-medo-db
+  ports:
+  - name: tcp-3306
+    protocol: TCP
+    port: 3306
+    targetPort: mysql
+  - name: tcp-8000
+    protocol: TCP
+    port: 8000
+    targetPort: 8000

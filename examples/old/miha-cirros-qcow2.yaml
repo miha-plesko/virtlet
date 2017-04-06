@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: miha-cirros-qcow2-pod
+  labels:
+    case: miha-cirros-qcow2-pod
+  annotations:
+    kubernetes.io/target-runtime: virtlet
+    scheduler.alpha.kubernetes.io/affinity: >
+      {
+        "nodeAffinity": {
+          "requiredDuringSchedulingIgnoredDuringExecution": {
+            "nodeSelectorTerms": [
+              {
+                "matchExpressions": [
+                  {
+                    "key": "extraRuntime",
+                    "operator": "In",
+                    "values": ["virtlet"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+spec:
+  containers:
+    - name: miha-cirros-qcow2
+      image: virtlet/image-service.kube-system/nody.qemu

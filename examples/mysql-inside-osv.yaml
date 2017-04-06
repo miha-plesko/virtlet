@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-inside-osv
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: mysql-inside-osv
+      labels:
+        case: mysql-inside-osv
+      annotations:
+        kubernetes.io/target-runtime: virtlet
+        scheduler.alpha.kubernetes.io/affinity: >
+          {
+            "nodeAffinity": {
+              "requiredDuringSchedulingIgnoredDuringExecution": {
+                "nodeSelectorTerms": [
+                  {
+                    "matchExpressions": [
+                      {
+                        "key": "extraRuntime",
+                        "operator": "In",
+                        "values": ["virtlet"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+    spec:
+      containers:
+        - name: mysql-inside-osv
+          image: virtlet/image-service.kube-system/mysql-inside-osv.qemu
+          ports:
+          - name: mysql
+            containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-inside-osv
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    case: mysql-inside-osv
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: 3306
