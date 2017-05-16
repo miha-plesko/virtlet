@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -153,6 +154,7 @@ type Graphics struct {
 type Console struct {
 	Type   string        `xml:"type,attr"`
 	Target TargetConsole `xml:"target"`
+	Source SourceSerial  `xml:"source"`
 }
 
 type TargetConsole struct {
@@ -163,10 +165,15 @@ type TargetConsole struct {
 type Serial struct {
 	Type   string       `xml:"type,attr"`
 	Target TargetSerial `xml:"target"`
+	Source SourceSerial `xml:"source"`
 }
 
 type TargetSerial struct {
 	Port string `xml:"port,attr"`
+}
+
+type SourceSerial struct {
+	Path string `xml:"path,attr"`
 }
 
 type Sound struct {
@@ -187,7 +194,7 @@ func canUseKvm() bool {
 	return true
 }
 
-func generateDomXML(useKvm bool, name string, memory int64, memoryUnit string, uuid string, cpuNum int, cpuShare int64, cpuPeriod int64, cpuQuota int64, imageFilepath, netNSPath, cniConfig string) string {
+func generateDomXML(useKvm bool, name string, memory int64, memoryUnit string, uuid string, cpuNum int, cpuShare int64, cpuPeriod int64, cpuQuota int64, imageFilepath, netNSPath, cniConfig, sandboxId string) string {
 	domainType := defaultDomainType
 	emulator := defaultEmulator
 	if !useKvm {
@@ -229,11 +236,13 @@ func generateDomXML(useKvm bool, name string, memory int64, memoryUnit string, u
         </disk>
         <input type='tablet' bus='usb'/>
         <graphics type='vnc' port='-1'/>
-        <serial type='pty'>
-            <target port='0'/>
+        <serial type='file'>
+          <source path='/var/log/vms/%s/raw.log'/>
+          <target port='0'/>
         </serial>
-        <console type='pty'>
-            <target type='serial' port='0'/>
+        <console type='file'>
+          <source path='/var/log/vms/%s/raw.log'/>
+          <target type='serial' port='0'/>
         </console>
         <sound model='ac97'/>
         <video>
@@ -246,7 +255,7 @@ func generateDomXML(useKvm bool, name string, memory int64, memoryUnit string, u
       <env name='VIRTLET_CNI_CONFIG' value='%s'/>
     </commandline>
 </domain>`
-	return fmt.Sprintf(domXML, domainType, uuid, name, uuid, memoryUnit, memory, cpuNum, cpuShare, cpuPeriod, cpuQuota, imageFilepath, emulator, netNSPath, cniConfigEscaped)
+	return fmt.Sprintf(domXML, domainType, uuid, name, uuid, memoryUnit, memory, cpuNum, cpuShare, cpuPeriod, cpuQuota, imageFilepath, sandboxId, sandboxId, emulator, netNSPath, cniConfigEscaped)
 }
 
 func (v *VirtualizationTool) createBootImageSnapshot(imageName, backingStorePath string, size uint64) (string, error) {
@@ -471,7 +480,10 @@ func (v *VirtualizationTool) CreateContainer(metadataStore metadata.MetadataStor
 		return "", err
 	}
 
-	domXML := generateDomXML(canUseKvm(), name, memory, memoryUnit, uuid, cpuNum, cpuShares, cpuPeriod, cpuQuota, snapshotImage, netNSPath, cniConfig)
+	domXML := generateDomXML(canUseKvm(), name, memory, memoryUnit, uuid, cpuNum, cpuShares, cpuPeriod, cpuQuota, snapshotImage, netNSPath, cniConfig, in.PodSandboxId)
+
+	// Create log directory for libvirt.
+	os.Mkdir(filepath.Join("/var/log/vms", in.PodSandboxId), 0777)
 
 	virtletVolsDesc, _ := sandBoxAnnotations[VirtletVolumesAnnotationKeyName]
 	domXML, err = v.addAttachedVolumesXML(in.PodSandboxId, in.SandboxConfig.Metadata.Name, uuid, virtletVolsDesc, domXML)

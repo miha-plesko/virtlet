@@ -81,5 +81,6 @@ if [[ ${1:-} != -novirtlet ]]; then
       mkdir ${FLEXVOLUME_DIR}/virtlet~flexvolume_driver
       cp /flexvolume_driver ${FLEXVOLUME_DIR}/virtlet~flexvolume_driver/flexvolume_driver
     fi
-    /usr/local/bin/virtlet -v=${VIRTLET_LOGLEVEL:-2} -logtostderr=true -libvirt-uri=qemu+tcp://localhost/system -image-download-protocol="${PROTOCOL}" "${RAW_DEVICES}"
+    #/usr/local/bin/virtlet -v=${VIRTLET_LOGLEVEL:-2} -logtostderr=true -libvirt-uri=qemu+tcp://localhost/system -image-download-protocol="${PROTOCOL}" "${RAW_DEVICES}"
+    sleep infinity
 fi

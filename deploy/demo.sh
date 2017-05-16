@@ -6,11 +6,11 @@ set -o pipefail
 set -o errtrace
 
 NONINTERACTIVE="${NONINTERACTIVE:-}"
-NO_VM_CONSOLE="${NO_VM_CONSOLE:-}"
-INJECT_LOCAL_IMAGE="${INJECT_LOCAL_IMAGE:-}"
+NO_VM_CONSOLE="no, please do not do the virsh console"
+INJECT_LOCAL_IMAGE="yes please!"
 dind_script="dind-cluster-v1.6.sh"
 kubectl="${HOME}/.kubeadm-dind-cluster/kubectl"
-BASE_LOCATION="${BASE_LOCATION:-https://raw.githubusercontent.com/Mirantis/virtlet/master/}"
+BASE_LOCATION="${VIRTLET_DIR}"
 # Convenience setting for local testing:
 # BASE_LOCATION="${HOME}/work/kubernetes/src/github.com/Mirantis/virtlet"
 
